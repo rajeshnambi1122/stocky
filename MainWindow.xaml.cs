@@ -1,4 +1,5 @@
 using Microsoft.Win32;
+using System.IO;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -8,7 +9,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace StockWidget
+namespace Stocky
 {
     public partial class MainWindow : Window
     {
@@ -36,9 +37,20 @@ namespace StockWidget
         private DispatcherTimer _timer;
         private static readonly HttpClient _client = new HttpClient();
 
+        // Configurable settings
+        private string _tickerSymbol = "SWIGGY";
+        private int _quantity = 10;
+        private static readonly string _settingsFilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "Stocky", "settings.json");
+
         public MainWindow()
         {
             InitializeComponent();
+
+            // Load saved settings before anything else
+            LoadSettings();
+            ApplySettingsToUI();
 
             _client.DefaultRequestHeaders.UserAgent.ParseAdd(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
@@ -65,12 +77,125 @@ namespace StockWidget
 
             _ = FetchLiveStockPrice();
         }
+
+        // -------------------------------------------------------------
+        // SETTINGS PERSISTENCE
+        // -------------------------------------------------------------
+        private void LoadSettings()
+        {
+            try
+            {
+                if (File.Exists(_settingsFilePath))
+                {
+                    string json = File.ReadAllText(_settingsFilePath);
+                    using JsonDocument doc = JsonDocument.Parse(json);
+                    JsonElement root = doc.RootElement;
+
+                    if (root.TryGetProperty("TickerSymbol", out JsonElement tickerEl))
+                        _tickerSymbol = tickerEl.GetString() ?? "SWIGGY";
+
+                    if (root.TryGetProperty("Quantity", out JsonElement qtyEl))
+                        _quantity = qtyEl.GetInt32();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load settings: {ex.Message}");
+            }
+        }
+
+        private void SaveSettings()
+        {
+            try
+            {
+                string? dir = Path.GetDirectoryName(_settingsFilePath);
+                if (!string.IsNullOrEmpty(dir))
+                    Directory.CreateDirectory(dir);
+
+                var settings = new { TickerSymbol = _tickerSymbol, Quantity = _quantity };
+                string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(_settingsFilePath, json);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to save settings: {ex.Message}");
+            }
+        }
+
+        private void ApplySettingsToUI()
+        {
+            TickerText.Text = _tickerSymbol.Replace(".NS", "").Replace(".BO", "").ToUpper();
+            CompanyText.Text = $"{TickerText.Text}";
+        }
+
+        // -------------------------------------------------------------
+        // SETTINGS PANEL EVENT HANDLERS
+        // -------------------------------------------------------------
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Pre-fill inputs with current values
+            TickerInput.Text = _tickerSymbol;
+            QuantityInput.Text = _quantity.ToString();
+
+            // Show settings panel, hide main content
+            MainContent.Visibility = Visibility.Collapsed;
+            SettingsPanel.Visibility = Visibility.Visible;
+        }
+
+        private void SaveSettings_Click(object sender, RoutedEventArgs e)
+        {
+            string newTicker = TickerInput.Text.Trim().ToUpper();
+            if (string.IsNullOrEmpty(newTicker))
+            {
+                MessageBox.Show("Ticker symbol cannot be empty.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (!int.TryParse(QuantityInput.Text.Trim(), out int newQty) || newQty < 0)
+            {
+                MessageBox.Show("Please enter a valid quantity (0 or more).", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            _tickerSymbol = newTicker;
+            _quantity = newQty;
+
+            SaveSettings();
+            ApplySettingsToUI();
+
+            // Hide settings panel, show main content
+            SettingsPanel.Visibility = Visibility.Collapsed;
+            MainContent.Visibility = Visibility.Visible;
+
+            // Refresh data with the new ticker
+            PriceText.Text = "Loading...";
+            Portfolio.Text = "Loading..";
+            ChangeArrow.Text = "-";
+            ChangeText.Text = "-";
+            _ = FetchLiveStockPrice();
+        }
+
+        private void CancelSettings_Click(object sender, RoutedEventArgs e)
+        {
+            // Hide settings panel, show main content (no changes applied)
+            SettingsPanel.Visibility = Visibility.Collapsed;
+            MainContent.Visibility = Visibility.Visible;
+        }
+
+        // -------------------------------------------------------------
+        // STOCK DATA FETCHING
+        // -------------------------------------------------------------
         private async Task FetchLiveStockPrice()
         {
             try
             {
-                const string url =
-                    "https://query1.finance.yahoo.com/v8/finance/chart/SWIGGY.NS" +
+                // Append .NS if the ticker doesn't already have an exchange suffix
+                string yahooTicker = _tickerSymbol;
+                if (!yahooTicker.Contains('.'))
+                    yahooTicker += ".NS";
+
+                string url =
+                    $"https://query1.finance.yahoo.com/v8/finance/chart/{yahooTicker}" +
                     "?range=1d&interval=1m";
 
                 HttpResponseMessage response = await _client.GetAsync(url);
@@ -158,8 +283,8 @@ namespace StockWidget
             ChangeText.Text = $"{Math.Abs(percentChange):F2}%";
 
             //Portfolio Calculation
-            double GetPortfolioValue = price * 10;
-            Portfolio.Text = $"Portfolio: ₹{GetPortfolioValue}";
+            double GetPortfolioValue = price * _quantity;
+            Portfolio.Text = $"Portfolio: ₹{GetPortfolioValue:F2}";
 
             // Define UI Colors
             var greenText = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#137333"));
@@ -274,11 +399,11 @@ namespace StockWidget
                 {
                     if (enable)
                     {
-                        key.SetValue("StockWidget", $"\"{exePath}\"");
+                        key.SetValue("Stocky", $"\"{exePath}\"");
                     }
                     else
                     {
-                        key.DeleteValue("StockWidget", false);
+                        key.DeleteValue("Stocky", false);
                     }
                 }
             }
@@ -295,19 +420,19 @@ namespace StockWidget
                 string? exePath = Environment.ProcessPath;
                 if (string.IsNullOrEmpty(exePath)) return;
 
-                string uninstallKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\StockWidget";
+                string uninstallKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\Stocky";
 
                 if (enable)
                 {
                     using RegistryKey? key = Registry.CurrentUser.CreateSubKey(uninstallKeyPath);
                     if (key != null)
                     {
-                        key.SetValue("DisplayName", "Stock Widget");
+                        key.SetValue("DisplayName", "Stocky");
                         key.SetValue("DisplayVersion", "1.0.0");
                         key.SetValue("Publisher", "Rajesh Nambi");
                         key.SetValue("DisplayIcon", exePath);
                         key.SetValue("InstallLocation", AppDomain.CurrentDomain.BaseDirectory);
-                        key.SetValue("UninstallString", $"cmd.exe /c taskkill /f /im StockWidget.exe & reg delete \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v StockWidget /f & reg delete \"HKCU\\{uninstallKeyPath}\" /f");
+                        key.SetValue("UninstallString", $"cmd.exe /c taskkill /f /im Stocky.exe & reg delete \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v Stocky /f & reg delete \"HKCU\\{uninstallKeyPath}\" /f");
                         key.SetValue("NoModify", 1, RegistryValueKind.DWord);
                         key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
                     }

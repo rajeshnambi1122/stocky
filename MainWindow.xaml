@@ -1,7 +1,7 @@
-<Window x:Class="StockWidget.MainWindow"
+<Window x:Class="Stocky.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Stock Widget" Height="230" Width="300"
+        Title="Stocky" Height="230" Width="300"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -18,40 +18,182 @@
 			<DropShadowEffect Color="Black" BlurRadius="10" Opacity="0.1" ShadowDepth="2"/>
 		</Border.Effect>
 
-		<StackPanel>
-			<!-- ROW 1: Ticker and Company Name -->
-			<StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-				<TextBlock Text="SWIGGY" FontWeight="Bold" FontSize="14" Foreground="#222222"/>
-				<TextBlock Text="  •  " Foreground="#757575" FontSize="14" FontWeight="Bold"/>
-				<TextBlock Text="Swiggy Ltd." Foreground="#757575" FontSize="14"/>
-			</StackPanel>
-
-			<!-- ROW 2: Price and Green/Red Badge -->
-			<StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-				<TextBlock x:Name="PriceText" Text="Loading..." FontWeight="Black" FontSize="32" Foreground="#222222"/>
-
-				<!-- Percentage Badge (Now with x:Name properties!) -->
-				<Border x:Name="ChangeBadge" Background="#E6F4EA" CornerRadius="6" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center">
-					<StackPanel Orientation="Horizontal">
-						<TextBlock x:Name="ChangeArrow" Text="-" Foreground="#137333" FontWeight="Bold" FontSize="13"/>
-						<TextBlock x:Name="ChangeText" Text="-" Foreground="#137333" FontWeight="Bold" FontSize="13"/>
+		<Grid>
+			<!-- Main Content Layer -->
+			<StackPanel x:Name="MainContent">
+				<!-- ROW 1: Ticker and Company Name + Settings Gear -->
+				<Grid Margin="0,0,0,12">
+					<StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+						<TextBlock x:Name="TickerText" Text="SWIGGY" FontWeight="Bold" FontSize="14" Foreground="#222222"/>
+						<TextBlock Text="  •  " Foreground="#757575" FontSize="14" FontWeight="Bold"/>
+						<TextBlock x:Name="CompanyText" Text="Swiggy Ltd." Foreground="#757575" FontSize="14"/>
 					</StackPanel>
-				</Border>
+
+					<!-- Settings Gear Icon (Lucide Settings) -->
+					<Button x:Name="SettingsButton"
+					        HorizontalAlignment="Right" VerticalAlignment="Center"
+					        Background="Transparent" BorderBrush="Transparent"
+					        Cursor="Hand"
+					        Click="SettingsButton_Click"
+					        ToolTip="Settings">
+						<Button.Style>
+							<Style TargetType="Button">
+								<Setter Property="Template">
+									<Setter.Value>
+										<ControlTemplate TargetType="Button">
+											<Border x:Name="BtnBorder" Background="Transparent" 
+											        CornerRadius="4" Padding="4">
+												<Canvas Width="16" Height="16">
+													<Canvas.RenderTransform>
+														<ScaleTransform ScaleX="0.667" ScaleY="0.667"/>
+													</Canvas.RenderTransform>
+													<Path Stroke="#9E9E9E" StrokeThickness="1.6" Fill="Transparent"
+													      StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+													      Data="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+													<Ellipse Canvas.Left="9" Canvas.Top="9" Width="6" Height="6"
+													         Stroke="#9E9E9E" StrokeThickness="1.6" Fill="Transparent"/>
+												</Canvas>
+											</Border>
+											<ControlTemplate.Triggers>
+												<Trigger Property="IsMouseOver" Value="True">
+													<Setter TargetName="BtnBorder" Property="Background" Value="#0A000000"/>
+												</Trigger>
+											</ControlTemplate.Triggers>
+										</ControlTemplate>
+									</Setter.Value>
+								</Setter>
+							</Style>
+						</Button.Style>
+					</Button>
+				</Grid>
+
+				<!-- ROW 2: Price and Green/Red Badge -->
+				<StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+					<TextBlock x:Name="PriceText" Text="Loading..." FontWeight="Black" FontSize="32" Foreground="#222222"/>
+
+					<!-- Percentage Badge (Now with x:Name properties!) -->
+					<Border x:Name="ChangeBadge" Background="#E6F4EA" CornerRadius="6" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center">
+						<StackPanel Orientation="Horizontal">
+							<TextBlock x:Name="ChangeArrow" Text="-" Foreground="#137333" FontWeight="Bold" FontSize="13"/>
+							<TextBlock x:Name="ChangeText" Text="-" Foreground="#137333" FontWeight="Bold" FontSize="13"/>
+						</StackPanel>
+					</Border>
+				</StackPanel>
+
+				<StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+					<TextBlock x:Name="Portfolio" Text="Loading.." FontWeight="Regular" FontSize="14" Foreground="#107C41"/>
+				</StackPanel>
+
+				<!-- ROW 3: Subtle Gray Divider -->
+				<Rectangle Height="1" Fill="#E0E0E0" Margin="0,20,0,20"/>
+
+				<!-- ROW 4: Sparkline Chart -->
+				<Canvas Width="240" Height="40" HorizontalAlignment="Center">
+					<Polyline x:Name="StockChart" Stroke="#188038" StrokeThickness="2"
+					          Points="0,35 30,25 55,32 85,10 115,22 240,20"/>
+				</Canvas>
 			</StackPanel>
 
+			<!-- Settings Overlay Panel (WinUI 3 Style) -->
+			<Border x:Name="SettingsPanel" Background="#fff" CornerRadius="8" 
+			        Visibility="Collapsed" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+				<StackPanel VerticalAlignment="Top" Margin="6,2,6,0">
 
-			<StackPanel Orientation="Horizontal" Margin="0,0,0,0">
-				<TextBlock x:Name="Portfolio" Text="Loading.." FontWeight="Regular" FontSize="14" Foreground="#107C41"/>
-			</StackPanel>
+					<!-- Title -->
+					<TextBlock Text="Settings" FontFamily="Segoe UI Variable Display" 
+					           FontWeight="SemiBold" FontSize="14" Foreground="#1A1A1A" Margin="0,0,0,8"/>
 
-			<!-- ROW 3: Subtle Gray Divider -->
-			<Rectangle Height="1" Fill="#E0E0E0" Margin="0,20,0,20"/>
+					<!-- Ticker Input (WinUI style card) -->
+					<TextBlock Text="Ticker Symbol" FontFamily="Segoe UI Variable Text"
+					           FontSize="11" Foreground="#616161" Margin="0,0,0,3"/>
+					<Border Background="White" CornerRadius="4" BorderBrush="#E5E5E5" BorderThickness="1"
+					        Margin="0,0,0,6">
+						<Border BorderBrush="#0067C0" BorderThickness="0,0,0,2" CornerRadius="4">
+							<TextBox x:Name="TickerInput" FontFamily="Segoe UI Variable Text"
+							         FontSize="13" Padding="6,4"
+							         Background="Transparent" BorderThickness="0"
+							         Foreground="#1A1A1A" CaretBrush="#0067C0"/>
+						</Border>
+					</Border>
 
-			<!-- ROW 4: Sparkline Chart -->
-			<Canvas Width="240" Height="40" HorizontalAlignment="Center">
-				<Polyline x:Name="StockChart" Stroke="#188038" StrokeThickness="2"
-				          Points="0,35 30,25 55,32 85,10 115,22 240,20"/>
-			</Canvas>
-		</StackPanel>
+					<!-- Quantity Input (WinUI style card) -->
+					<TextBlock Text="Quantity (Shares)" FontFamily="Segoe UI Variable Text"
+					           FontSize="11" Foreground="#616161" Margin="0,0,0,3"/>
+					<Border Background="White" CornerRadius="4" BorderBrush="#E5E5E5" BorderThickness="1"
+					        Margin="0,0,0,10">
+						<Border BorderBrush="#0067C0" BorderThickness="0,0,0,2" CornerRadius="4">
+							<TextBox x:Name="QuantityInput" FontFamily="Segoe UI Variable Text"
+							         FontSize="13" Padding="6,4"
+							         Background="Transparent" BorderThickness="0"
+							         Foreground="#1A1A1A" CaretBrush="#0067C0"/>
+						</Border>
+					</Border>
+
+					<!-- Action Buttons (WinUI style) -->
+					<StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+						<!-- Cancel Button -->
+						<Button Content="Cancel" Padding="10,5" Margin="0,0,8,0"
+						        FontFamily="Segoe UI Variable Text" FontSize="12"
+						        Cursor="Hand" Click="CancelSettings_Click">
+							<Button.Style>
+								<Style TargetType="Button">
+									<Setter Property="Template">
+										<Setter.Value>
+											<ControlTemplate TargetType="Button">
+												<Border x:Name="CancelBorder" Background="White" 
+												        CornerRadius="4" BorderBrush="#E5E5E5" BorderThickness="1"
+												        Padding="{TemplateBinding Padding}">
+													<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+												</Border>
+												<ControlTemplate.Triggers>
+													<Trigger Property="IsMouseOver" Value="True">
+														<Setter TargetName="CancelBorder" Property="Background" Value="#F9F9F9"/>
+													</Trigger>
+													<Trigger Property="IsPressed" Value="True">
+														<Setter TargetName="CancelBorder" Property="Background" Value="#F0F0F0"/>
+													</Trigger>
+												</ControlTemplate.Triggers>
+											</ControlTemplate>
+										</Setter.Value>
+									</Setter>
+									<Setter Property="Foreground" Value="#1A1A1A"/>
+								</Style>
+							</Button.Style>
+						</Button>
+
+						<!-- Save Button (WinUI Accent) -->
+						<Button Content="Save" Padding="10,5"
+						        FontFamily="Segoe UI Variable Text" FontSize="12"
+						        Cursor="Hand" Click="SaveSettings_Click">
+							<Button.Style>
+								<Style TargetType="Button">
+									<Setter Property="Template">
+										<Setter.Value>
+											<ControlTemplate TargetType="Button">
+												<Border x:Name="SaveBorder" Background="#0067C0" 
+												        CornerRadius="4" BorderThickness="0"
+												        Padding="{TemplateBinding Padding}">
+													<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+												</Border>
+												<ControlTemplate.Triggers>
+													<Trigger Property="IsMouseOver" Value="True">
+														<Setter TargetName="SaveBorder" Property="Background" Value="#1975CA"/>
+													</Trigger>
+													<Trigger Property="IsPressed" Value="True">
+														<Setter TargetName="SaveBorder" Property="Background" Value="#005A9E"/>
+													</Trigger>
+												</ControlTemplate.Triggers>
+											</ControlTemplate>
+										</Setter.Value>
+									</Setter>
+									<Setter Property="Foreground" Value="White"/>
+									<Setter Property="FontWeight" Value="SemiBold"/>
+								</Style>
+							</Button.Style>
+						</Button>
+					</StackPanel>
+				</StackPanel>
+			</Border>
+		</Grid>
 	</Border>
 </Window>
