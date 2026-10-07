@@ -9,7 +9,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace Stocky
+namespace Stocky.Views
 {
     public partial class MainWindow : Window
     {

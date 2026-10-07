@@ -50,6 +50,9 @@ You will find the executable in the `bin\Release\net10.0-windows\win-x64\publish
 3. Enter the quantity of shares you own for the portfolio calculation.
 4. Click **Save**.
 
+## Roadmap
+I'm planning to add more features to this project, checkout [here](/ROADMAP.md) for more information.
+
 ## License
 
 This project is licensed under the MIT License.
